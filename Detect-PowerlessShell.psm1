@@ -4,6 +4,7 @@
             IP= "null"
             Hostname= $env:COMPUTERNAME
             DateCollected= $null
+            TimeGenerated= "null"
             Source= "Detect-PowerlessShell"
             Indicator= $null
             Location= $null
@@ -43,7 +44,8 @@
         
     #powerless strings in Powershell logs
     $strings= @()
-    $str1= 'Start-process powershell -win 1 -argumentlist' + "sleep 1; Get-ChildItem -path `'$p`' | remove-item *"
+    $str1= "'" + 'Start-process powershell -win 1 -argumentlist' + ' "' + "sleep 1; Get-ChildItem -path"
+    $str1= $str1 + ' `' + "'" + '$p`'+ "'" + ' | remove-item"' + "'"
     $strings+= $str1
     $strings+= 'function Write-ExtractionProgress'
     $strings+= 'Find-ExternalOutputFolder'
@@ -51,15 +53,16 @@
     $strings+= 'Add-Content -Path $Profile.CurrentUserAllHosts '
     
     $PowershellLogs= $(Get-WinEvent -LogName "Microsoft-Windows-PowerShell/Operational" | where {$_.id -eq 4104})
-    $userid= ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
+    $userid= $($env:USERNAME | Get-LocalUser).sid.value
     
     foreach ($p in $PowershellLogs){
         foreach ($s in $strings){
             if ($p.message | select-string "$s"){
-                if ($p.UserId -ne $userid){
+                if ($p.UserId.value -ne $userid){
                     $date= (Get-Date -Format "dd-MMM-yyyy HH:mm").Split(":") -join ""
                     $results= build-class
                     $results.datecollected= $date
+                    $results.timegenerated= $p.TimeCreated
                     $results.indicator= $s
                     $results.location= "Powershell Record ID $($p.recordid)"
                     $output+= $results | ConvertTo-Json
@@ -138,6 +141,8 @@
         }
     }    
 $output | ConvertFrom-Json | convertto-csv -NoTypeInformation
+$userid
+get-localuser | select *
 }
 
 #Detect-PowerlessShell
