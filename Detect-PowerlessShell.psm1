@@ -1,10 +1,10 @@
-﻿function Detect-PowerlessShell{
+function Detect-PowerlessShell{
     function build-class{
         $outputclass= [pscustomobject][ordered]@{
-            IP= "null"
+            IP= "Null"
             Hostname= $env:COMPUTERNAME
             DateCollected= $null
-            TimeGenerated= "null"
+            TimeGenerated= "Null"
             Source= "Detect-PowerlessShell"
             Indicator= $null
             Location= $null
@@ -54,7 +54,7 @@
     
     $PowershellLogs= $(Get-WinEvent -LogName "Microsoft-Windows-PowerShell/Operational" | where {$_.id -eq 4104})
     $userid= $($env:USERNAME | Get-LocalUser).sid.value
-    
+
     foreach ($p in $PowershellLogs){
         foreach ($s in $strings){
             if ($p.message | select-string "$s"){
@@ -140,9 +140,17 @@
             $output+= $results | ConvertTo-Json
         }
     }    
+
+if (!$output){
+    $results= build-class
+    $results.datecollected= $date
+    $results.indicator= "Null"
+    $results.location= "Null"
+    $output+= $results | ConvertTo-Json
+}
+
 $output | ConvertFrom-Json | convertto-csv -NoTypeInformation
 }
 
 #Detect-PowerlessShell
 Export-ModuleMember -Function Detect-PowerlessShell
-
