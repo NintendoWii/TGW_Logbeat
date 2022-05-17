@@ -141,8 +141,6 @@
         }
     }    
 $output | ConvertFrom-Json | convertto-csv -NoTypeInformation
-$userid
-get-localuser | select *
 }
 
 #Detect-PowerlessShell
